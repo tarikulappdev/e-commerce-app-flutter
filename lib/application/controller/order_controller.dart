@@ -1,36 +1,14 @@
-
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:dio/dio.dart';
 
-import '../../model/order.dart';
 class OrderController extends GetxController {
-  var activeOrders = [].obs;
-  var completedOrders = [].obs;
-  var cancelledOrders = [].obs;
   var isLoading = true.obs;
+  var activeOrders = <dynamic>[].obs;
+  var completedOrders = <dynamic>[].obs;
+  var cancelledOrders = <dynamic>[].obs;
 
-
-  var orders = <Order>[
-    Order(
-      title: "Watch",
-      brand: "Rolex",
-      price: 40,
-      image: "https://images.pexels.com/photos/280250/pexels-photo-280250.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Replace with actual image URL
-    ),
-    Order(
-      title: "Airpods",
-      brand: "Apple",
-      price: 333,
-      image: "https://images.pexels.com/photos/788946/pexels-photo-788946.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2", // Replace with actual image URL
-    ),
-    Order(
-      title: "Hoodie",
-      brand: "Puma",
-      price: 50,
-      image: "https://images.pexels.com/photos/29481918/pexels-photo-29481918/free-photo-of-mysterious-figure-overlooks-malibu-mountains-at-dusk.jpeg?auto=compress&cs=tinysrgb&w=600", // Replace with actual image URL
-    ),
-  ].obs;
-
+  final Dio _dio = Dio();
 
   @override
   void onInit() {
@@ -39,21 +17,28 @@ class OrderController extends GetxController {
   }
 
   void fetchOrders() async {
-    isLoading(true);
     try {
-      var response = await Dio().get('https://example.com/api/orders');
-      // Example: Filter orders based on their status
-      var orders = response.data;
-      activeOrders.assignAll(orders.where((o) => o['status'] == 'active'));
-      completedOrders.assignAll(orders.where((o) => o['status'] == 'completed'));
-      cancelledOrders.assignAll(orders.where((o) => o['status'] == 'cancelled'));
+      isLoading.value = true;
+
+      final response = await _dio.get('http://192.168.107.37:8081/api/order/list');
+      if (response.statusCode == 200) {
+        List<dynamic> orders = response.data;
+
+        // Categorize orders
+        activeOrders.value = orders.where((o) => o['status'] == 'PENDING').toList();
+        completedOrders.value = orders.where((o) => o['status'] == 'COMPLETED').toList();
+        cancelledOrders.value = orders.where((o) => o['status'] == 'CANCELLED').toList();
+      }
     } catch (e) {
-      print("Error fetching orders: $e");
+      Get.snackbar(
+        "Error",
+        "Failed to fetch orders: ${e.toString()}",
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
     } finally {
-      isLoading(false);
+      isLoading.value = false;
     }
   }
-
-
-
 }

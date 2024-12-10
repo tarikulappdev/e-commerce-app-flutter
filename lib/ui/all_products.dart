@@ -1,20 +1,23 @@
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../application/controller/cart_controller.dart';
 import '../application/controller/product_controller.dart';
-import '../model/cart.dart';
-import '../model/product.dart';
-import '../model/product_item.dart';
-
+import '../application/controller/cart_controller.dart';
 
 class AllProducts extends StatelessWidget {
-  final ProductController controller = Get.put(ProductController());
+  final String category;
 
-    AllProducts({super.key});
+  AllProducts({super.key, required this.category});
+  final ProductController productController = Get.find<ProductController>();
+  final CartController cartController = Get.put(CartController());
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (productController.allProducts.isNotEmpty) {
+        productController.fetchAllCategoryProducts(category);
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("Products"),
@@ -24,9 +27,17 @@ class AllProducts extends StatelessWidget {
         ),
       ),
       body: Obx(() {
-        if (controller.isLoading.value) {
+        if (productController.isLoading.value) {
           return const Center(child: CircularProgressIndicator());
         }
+
+        List<dynamic> categoryProducts =
+            productController.categoryWiseProducts[category] ?? [];
+
+        if (categoryProducts.isEmpty) {
+          return const Center(child: Text("No products found."));
+        }
+
         return GridView.builder(
           padding: const EdgeInsets.all(8),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -35,9 +46,9 @@ class AllProducts extends StatelessWidget {
             mainAxisSpacing: 8,
             childAspectRatio: 0.75,
           ),
-          itemCount: controller.products.length,
+          itemCount: categoryProducts.length,
           itemBuilder: (context, index) {
-            final product = controller.products[index];
+            var product = categoryProducts[index];
             return ProductCard(product: product);
           },
         );
@@ -45,9 +56,10 @@ class AllProducts extends StatelessWidget {
     );
   }
 }
+
 class ProductCard extends StatelessWidget {
-  final Product product;
-  final CartController cartController = Get.put(CartController());
+  final Map<String, dynamic> product;
+  final CartController cartController = Get.find<CartController>();
 
   ProductCard({super.key, required this.product});
 
@@ -60,14 +72,13 @@ class ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Product Image with Favorite Icon Overlay
           Stack(
             children: [
               ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
                 child: Image.network(
-                  product.image!,
-                  height: 100,
+                  product['image'],
+                  height: 140,
                   width: double.infinity,
                   fit: BoxFit.cover,
                 ),
@@ -83,15 +94,13 @@ class ProductCard extends StatelessWidget {
               ),
             ],
           ),
-
-          // Product Title and Price
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  product.title!,
+                  product['title'],
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -102,7 +111,7 @@ class ProductCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '\$${product.price}',
+                  '\$${product['price']}',
                   style: const TextStyle(
                     fontSize: 12,
                     color: Colors.blueAccent,
@@ -112,13 +121,13 @@ class ProductCard extends StatelessWidget {
               ],
             ),
           ),
-
-          // Add to Cart Button at the Bottom
           Padding(
             padding: const EdgeInsets.all(6.0),
             child: Align(
               alignment: Alignment.centerRight,
-              child: Container(
+              child: Obx(() => cartController.isLoading.value
+                  ? const CircularProgressIndicator()
+                  : Container(
                 decoration: const BoxDecoration(
                   color: Colors.blueAccent,
                   shape: BoxShape.circle,
@@ -126,20 +135,10 @@ class ProductCard extends StatelessWidget {
                 child: IconButton(
                   icon: const Icon(Icons.add, color: Colors.white, size: 20),
                   onPressed: () {
-                    // Create Cart object with one product
-                    Cart cart = Cart(
-                      userId: 5,
-                      date: "2020-02-03",
-                      products: [
-                        ProductItem(productId: product.id, quantity: 1),
-                      ],
-                    );
-
-                    // Call createCart with the Cart model instance
-                    cartController.createCart(cart);
+                    cartController.addToCart(product);
                   },
                 ),
-              ),
+              )),
             ),
           ),
         ],
@@ -147,5 +146,4 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-
 

@@ -1,3 +1,5 @@
+import 'package:e_commerce_app/model/product.dart';
+
 class CartModel {
   int? id;
   int? userId;
@@ -18,16 +20,4 @@ class CartModel {
   }
 }
 
-class Product {
-  int? productId;
-  int? quantity;
 
-  Product({ this.productId,  this.quantity});
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      productId: json['productId'],
-      quantity: json['quantity'],
-    );
-  }
-}

@@ -1,8 +1,8 @@
-import 'package:e_commerce_app/ui/order_listView.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../application/controller/order_controller.dart';
+
 class OrdersPage extends StatelessWidget {
   final OrderController orderController = Get.put(OrderController());
 
@@ -21,9 +21,9 @@ class OrdersPage extends StatelessWidget {
             labelColor: Colors.black,
             indicatorColor: Colors.purple,
             tabs: [
-              Tab(text: "Active"),
+              Tab(text: "Pending"),
               Tab(text: "Completed"),
-              Tab(text: "Cancel"),
+              Tab(text: "Cancelled"),
             ],
           ),
         ),
@@ -34,7 +34,7 @@ class OrdersPage extends StatelessWidget {
 
           return TabBarView(
             children: [
-              OrderListView(),
+              _buildOrderList(orderController.activeOrders),
               _buildOrderList(orderController.completedOrders),
               _buildOrderList(orderController.cancelledOrders),
             ],
@@ -44,7 +44,6 @@ class OrdersPage extends StatelessWidget {
     );
   }
 
-  // Builds the list of orders for a specific tab
   Widget _buildOrderList(List<dynamic> orders) {
     return orders.isEmpty
         ? const Center(child: Text("No orders available"))
@@ -57,7 +56,6 @@ class OrdersPage extends StatelessWidget {
     );
   }
 
-  // Builds an individual order card
   Widget _buildOrderCard(dynamic order) {
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -69,10 +67,12 @@ class OrdersPage extends StatelessWidget {
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: Image.network(
-                order['image'],
+                order['orderDetails'][0]['imageUrl'] ?? '',
                 height: 80,
                 width: 80,
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                const Icon(Icons.image, size: 80),
               ),
             ),
             const SizedBox(width: 12),
@@ -81,43 +81,31 @@ class OrdersPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    order['name'],
+                    "Order ID: ${order['orderId']}",
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    order['brand'],
-                    style: const TextStyle(color: Colors.grey),
+                    "Total: \$${order['totalAmount'].toStringAsFixed(2)}",
+                    style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "\$${order['price']}",
-                    style: const TextStyle(color: Colors.purple, fontWeight: FontWeight.bold),
+                    "Status: ${order['status']}",
+                    style: const TextStyle(color: Colors.grey),
                   ),
                 ],
               ),
             ),
-            Column(
-              children: [
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  onPressed: () {
-                    // Handle track order
-                  },
-                  child: const Text("Track Order"),
-                ),
-                const SizedBox(height: 8),
-                if (order['status'] == 'active')
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      // Handle cancel/delete order
-                    },
-                  ),
-              ],
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.purple,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                // Handle view details
+              },
+              child: const Text("View Details"),
             ),
           ],
         ),

@@ -103,122 +103,122 @@ class ProductPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 10),
-            _buildSection("Featured", controller.featuredProducts),
-            _buildSection("Most Popular", controller.popularProducts),
+            Obx(() {
+              if (controller.isLoading.value) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final groupedProducts = controller.categoryWiseProducts;
+
+              if (groupedProducts.isEmpty) {
+                return const Center(child: Text("No products found."));
+              }
+
+              return Column(
+                children: groupedProducts.entries.map((entry) {
+                  final category = entry.key;
+                  final products = entry.value;
+
+                  return _buildCategorySection(category, products);
+                }).toList(),
+              );
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSection(String title, var productList) {
+  Widget _buildCategorySection(String category, List<dynamic> products) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(title,
+              Text(category,
                   style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {
                   // Navigate to CategoryPage with the category name
-                  Get.to(() => AllProducts());
+                  Get.to(() => AllProducts(category: category));
                 },
-                child: const Text("See All"),
+                child: const Text("See All",style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          Obx(() => SizedBox(
-            height: 200, // Adjust the height as needed
-            child: GridView.builder(
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: productList.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.7,
-              ),
-              itemBuilder: (context, index) {
-                var product = productList[index];
-                return GestureDetector(
-                  onTap: () {
-                    // Navigate to Product Details Page with product ID
-                    Get.to(() => ProductDetailsPage(productId: product["id"]));
-                  },
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    shadowColor: Colors.grey.withOpacity(0.3),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Stack(
+          const SizedBox(height: 10),
+          GridView.builder(
+            shrinkWrap: true, // Allows the GridView to take only as much space as it needs
+            physics: const NeverScrollableScrollPhysics(), // Prevents the GridView from scrolling
+            itemCount: products.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+            ),
+            itemBuilder: (context, index) {
+              final product = products[index];
+              final price = (product["price"] is int)
+                  ? product["price"].toDouble()
+                  : product["price"];
+
+              return GestureDetector(
+                onTap: () {
+                  // Navigate to Product Details
+                  Get.to(() => ProductDetailsPage(product: product));
+                },
+                child: Card(
+                  elevation: 2,
+                  shadowColor: Colors.grey.withOpacity(0.3),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(10)),
+                        child: Image.network(
+                          product["image"],
+                          height: 200,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            ClipRRect(
-                              borderRadius: const BorderRadius.vertical(
-                                  top: Radius.circular(12)),
-                              child: Image.network(
-                                product["image"],
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: 100, // Adjust height as needed
-                              ),
+                            Text(
+                              product["title"],
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 14),
                             ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: CircleAvatar(
-                                backgroundColor:
-                                Colors.white.withOpacity(0.8),
-                                radius: 15,
-                                child: const Icon(
-                                  Icons.favorite_border,
-                                  size: 16,
-                                  color: Colors.black,
-                                ),
+                            const SizedBox(height: 4),
+                            Text(
+                              "\$${price.toStringAsFixed(2)}",
+                              style: const TextStyle(
+                                color: Colors.deepPurple,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
                               ),
                             ),
                           ],
                         ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                product["title"],
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                "\$${product["price"]}",
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.deepPurple,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-          )),
+                ),
+              );
+            },
+          ),
         ],
       ),
     );
   }
-
-}
+  }
